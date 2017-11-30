@@ -34,8 +34,9 @@ function detect(ua, customConfig, callback) {
 		isBrowser: true,
 
 		//Custom validation rules
-		customRules: []
+		customRules: [],
 
+		uaWhiteList: []
 	};
 
 	//Params overload
@@ -58,25 +59,22 @@ function detect(ua, customConfig, callback) {
 
 	} else {
 
-		async.parallel([
-			async.apply(_uaBlackList, ua, config),
-			async.apply(_deviceBlackList, ua, config),
-			async.apply(_isBrowser, ua, config),
-			async.apply(_customRules, ua, config)
-		], function(exit) {
-
-			if (_.isError(exit)) {
-
-				cb(exit, true);
-
-			} else {
-
-				cb(null, exit ? true : false);
-
-			}
-
-		});
-
+		if (_uaWhiteList(ua, config)) {
+			cb(null, false)
+		} else {
+			async.parallel([
+				async.apply(_uaBlackList, ua, config),
+				async.apply(_deviceBlackList, ua, config),
+				async.apply(_isBrowser, ua, config),
+				async.apply(_customRules, ua, config)
+			], function(exit) {
+				if (_.isError(exit)) {
+					cb(exit, true);
+				} else {
+					cb(null, exit ? true : false);
+				}
+			});
+		}
 	}
 
 }
@@ -96,7 +94,6 @@ function _customRules(ua, config, next) {
 
 		//Process each rule
 		async.each(rules, function(rule, done) {
-
 			if (_.isFunction(rule)) {
 
 				rule(ua, done);
@@ -119,6 +116,19 @@ function _customRules(ua, config, next) {
 
 	}
 
+}
+
+function _uaWhiteList(ua, config) {
+	var whitelist = config.uaWhiteList
+	if (_.isEmpty(whitelist) === false) {
+		//Escape string for regex
+		whitelist = _regexerize(whitelist);
+
+		//Check if exists in the blacklist
+		return ua.match(whitelist.join('|'))
+	} else {
+		return false
+	}
 }
 
 /**

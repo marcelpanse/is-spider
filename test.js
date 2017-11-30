@@ -260,6 +260,20 @@ function init() {
 		assert.equal(is, false);
 	});
 
+	//Whitelist
+	config = {
+		uaWhiteList: ['AdsBot']
+	};
+
+	isSpider(uaList.adsbot, config, function(err, is) {
+		assert.equal(err, null);
+		assert.equal(is, false);
+	});
+	isSpider(uaList.googlebot, config, function(err, is) {
+		assert.equal(err, null);
+		assert.equal(is, true);
+	});
+
 }
 
 init();
